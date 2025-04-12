@@ -27,7 +27,11 @@ def getDatabaseSchema():
     return db.get_table_info() 
 
 
-llm = ChatOllama(model="llama3")
+llm = ChatOllama(
+    model="llama3"
+    temperature=0.3,
+    num_ctx= 500
+    )
 app = Flask(__name__)
 
 def getQueryFromLLM(question):
@@ -39,15 +43,19 @@ def getQueryFromLLM(question):
     please only provide the SQL query and nothing else
 
     for example:
-    question: what are the sales of all regions? 
-    SELECT SUM(Sales) AS Total_Sales, Region FROM mytable GROUP BY Region
+    question: 
+    What is the total number of startups funded in Switzerland between 2015 and 2020?
+    SQL query: SELECT COUNT(*) FROM svcr_startups WHERE funding_year BETWEEN 2015 AND 2020;
   
-    question: what are the sales of the north region?
-    SELECT SUM(Sales) FROM mytable WHERE Region='North'
-    question: how many customers are from Brazil in the database ?
-    SQL query: SELECT COUNT(*) FROM customer WHERE country=Brazil
-    question: how many records are there for the customer Claire Gute ?
-    SELECT COUNT(*) FROM mytable WHERE Customer Name = 'Claire Gute'
+    question: Which industries have received the most investments in Switzerland since 2015?
+    SQL query: WITH industry_investments AS (SELECT industry, SUM(investment_amount) AS total_investments FROM svcr_startups WHERE funding_year >= 2015 GROUP BY industry) SELECT * FROM industry_investments ORDER BY total_investments DESC LIMIT 10;
+    
+    question: What is the average investment size per startup in Switzerland, by stage (Seed, Series A, Series B)?
+    SQL query: SELECT stage, AVG(investment_amount) AS avg_investment FROM svcr_startups WHERE funding_year >= 2015 GROUP BY stage;
+
+    question: Which cities in Switzerland have the highest concentration of startups (Top 3)?
+    SQL query: SELECT city, COUNT(*) AS startup_count FROM svcr_startups GROUP BY city ORDER BY startup_count DESC LIMIT 3;
+
     your turn :
     question: {question}
     SQL query :
@@ -103,7 +111,6 @@ def getResponseForQueryResult(question, query, result):
     })
 
     return response.content
-
 
 
 db = SQLDatabase.from_uri(mysql_uri)

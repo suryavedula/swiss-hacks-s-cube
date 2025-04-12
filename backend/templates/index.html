@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL Query Interface</title>
+</head>
+<body>
+    <h1>SQL Query Interface</h1>
+    <form method="POST">
+        <textarea name="user_input" rows="4" cols="50"></textarea><br>
+        <input type="submit" value="Submit">
+    </form>
+    {% if result %}
+    <div>
+        <h2>Result:</h2>
+        <p>{{ result }}</p>
+    </div>
+    {% endif %}
+</body>
+</html>
