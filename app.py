@@ -29,7 +29,7 @@ def getDatabaseSchema():
 
 llm = ChatOllama(
     model="llama3"
-    temperature=0.3,
+    temperature=0.1,
     num_ctx= 500
     )
 app = Flask(__name__)
@@ -44,16 +44,16 @@ def getQueryFromLLM(question):
 
     for example:
     question: 
-    What is the total number of startups funded in Switzerland between 2015 and 2020?
-    SQL query: SELECT COUNT(*) FROM svcr_startups WHERE funding_year BETWEEN 2015 AND 2020;
+    What is the total number of startups in Switzerland?
+    SQL query: SELECT COUNT(*) as count FROM svcr_startups;
   
-    question: Which industries have received the most investments in Switzerland since 2015?
-    SQL query: WITH industry_investments AS (SELECT industry, SUM(investment_amount) AS total_investments FROM svcr_startups WHERE funding_year >= 2015 GROUP BY industry) SELECT * FROM industry_investments ORDER BY total_investments DESC LIMIT 10;
+    question: Which industries have received the most investments in Switzerland after 2015?
+    SQL query: WITH industry_investments AS (SELECT industry, SUM(investment_amount) AS total_investments FROM svcr_startups WHERE funding_year > 2015 GROUP BY industry) SELECT * FROM industry_investments ORDER BY total_investments DESC LIMIT 10;
     
-    question: What is the average investment size per startup in Switzerland, by stage (Seed, Series A, Series B)?
+    question: What is the average investment amount size per startup in Switzerland, and by stage (Seed, Series A, Series B)?
     SQL query: SELECT stage, AVG(investment_amount) AS avg_investment FROM svcr_startups WHERE funding_year >= 2015 GROUP BY stage;
 
-    question: Which cities in Switzerland have the highest concentration of startups (Top 3)?
+    question: Which cities in Switzerland has the most numberof startups (Top 3)?
     SQL query: SELECT city, COUNT(*) AS startup_count FROM svcr_startups GROUP BY city ORDER BY startup_count DESC LIMIT 3;
 
     your turn :
@@ -83,19 +83,31 @@ def getResponseForQueryResult(question, query, result):
     Here are some example for you:
     
 
-    question: how many users we have in database
-    SQL query: SELECT COUNT(*) FROM customer;
-    Result : [(59,)]
-    Response: There are 59 amazing users in the database.
+    question: 
+    What is the total number of startups funded in Switzerland between 2015 and 2020?
+    SQL query: SELECT funding_year, COUNT(*) as count FROM svcr_startups WHERE funding_year BETWEEN 2015 AND 2020 GROUP BY funding_year ORDER BY funding_year;
+    Result : [59, 100, 250, 300, 400, 500]
+    Response: [{"2015": 59, "2016": 100, "2017": 250, "2018": 300, "2019": 400, "2020": 500}]
+  
+    question: Which industries have received the most investments in Switzerland since 2015?
+    SQL query: WITH industry_investments AS (SELECT industry, SUM(investment_amount) AS total_investments FROM svcr_startups WHERE funding_year >= 2015 GROUP BY industry) SELECT * FROM industry_investments ORDER BY total_investments DESC LIMIT 10;
+    Result : [ { "industry": "Technology", "total_investments": 1200000000 }, { "industry": "Healthcare", "total_investments": 950000000 }, { "industry": "Fintech", "total_investments": 800000000 }, { "industry": "Energy", "total_investments": 700000000 }, { "industry": "Education", "total_investments": 600000000 }, { "industry": "E-commerce", "total_investments": 550000000 }, { "industry": "Artificial Intelligence", "total_investments": 500000000 }, { "industry": "Transportation", "total_investments": 450000000 }, { "industry": "Real Estate", "total_investments": 400000000 }, { "industry": "Gaming", "total_investments": 350000000 } ]
+    Response: [{"Technology": 1200000000, "Healthcare": 950000000, "Fintech": 800000000, "Energy": 700000000, "Education": 600000000, "E-commerce": 550000000, "Artificial Intelligence": 500000000, "Transportation": 450000000, "Real Estate": 400000000, "Gaming": 350000000}]
 
-    question: how many users above are from United States we have in database
-    SQL query: SELECT COUNT(*) FROM customer WHERE country=United States;
-    Result : [(4,)]
-    Response: There are 4 amazing users in the database.
+    question: What is the average investment size per startup in Switzerland, by stage (Seed, Series A, Series B)?
+    SQL query: SELECT stage, AVG(investment_amount) AS avg_investment FROM svcr_startups WHERE funding_year >= 2015 GROUP BY stage;
+    Result : [ { "stage": "Seed", "avg_investment": 1000000 }, { "stage": "Series A", "avg_investment": 2000000 }, { "stage": "Series B", "avg_investment": 3000000 } ]
+    Response: [{"Seed": 1000000, "Series A": 2000000, "Series B": 3000000}]
+
+    question: Which cities in Switzerland have the highest concentration of startups (Top 3)?
+    SQL query: SELECT city, COUNT(*) AS startup_count FROM svcr_startups GROUP BY city ORDER BY startup_count DESC LIMIT 3;
+    Result : [{ "city": "Zurich", "startup_count": 100 }, { "city": "Geneva", "startup_count": 80 }, { "city": "Basel", "startup_count": 70 }]
+    Response: [{"Zurich": 100, "Geneva": 80, "Basel": 70}]
 
     your turn to write response in natural language from the given result :
     question: {question}
     SQL query : {query}
+    
     Result : {result}
     Response:
     """
